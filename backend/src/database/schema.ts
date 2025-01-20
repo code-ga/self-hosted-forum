@@ -1,7 +1,6 @@
 import { relations } from 'drizzle-orm'
 import {
   pgTable,
-  varchar,
   timestamp,
   uniqueIndex,
   text,
@@ -17,6 +16,7 @@ export const user = pgTable("user", {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull(),
   image: text('image'),
+  postId: text('post_id').notNull().array().default([]),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull()
 });
@@ -57,10 +57,19 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp('updated_at')
 });
 
+export const post = pgTable("post", {
+  id: text("id").notNull().primaryKey().$defaultFn(() => createId()),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  authorId: text("author_id").notNull().references(() => user.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
 
 export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   sessions: many(session),
+  posts: many(post),
 }))
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -84,6 +93,12 @@ export const verificationTokenRelations = relations(verification, ({ one }) => (
   }),
 }))
 
+export const postRelations = relations(post, ({ one }) => ({
+  author: one(user, {
+    fields: [post.authorId],
+    references: [user.id],
+  }),
+}));
 
 export const table = {
   user,

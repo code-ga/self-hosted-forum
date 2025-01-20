@@ -7,12 +7,13 @@
     "build": "echo \"Error: no build specified\""
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.2.0",
     "@elysiajs/swagger": "^1.2.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "better-auth": "^1.1.14",
     "drizzle-orm": "^0.38.4",
     "drizzle-typebox": "^0.2.1",
-    "elysia": "latest",
+    "elysia": "^1.2.0",
     "pg": "^8.13.1"
   },
   "devDependencies": {
