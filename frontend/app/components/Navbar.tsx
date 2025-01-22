@@ -2,16 +2,22 @@ import { Link, useNavigate } from "react-router";
 import { authClient } from "../libs/auth-client";
 import CreatePostForm from "./CreatePostForm";
 import Avatar from "./Avatar";
+import { useQuery } from "@tanstack/react-query";
 
 interface NavbarProps {}
 
 const Navbar: React.FC<NavbarProps> = () => {
   const navigate = useNavigate();
-  const { data } = authClient.useSession();
-
-  const handleRandomJoin = () => {
-    navigate(`/matching`);
-  };
+  const { data, error, isPending } = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const result = await authClient.getSession();
+      if (result?.error) {
+        throw result.error;
+      }
+      return result.data;
+    },
+  });
 
   return (
     <nav className="bg-gray-800 text-white p-4 flex justify-between content-center">

@@ -1,13 +1,13 @@
-import { relations } from 'drizzle-orm'
+import { relations } from 'drizzle-orm';
 import {
+  boolean,
+  jsonb,
   pgTable,
-  timestamp,
-  uniqueIndex,
   text,
-  boolean
-} from 'drizzle-orm/pg-core'
+  timestamp
+} from 'drizzle-orm/pg-core';
 
-import { createId } from '@paralleldrive/cuid2'
+import { createId } from '@paralleldrive/cuid2';
 
 
 export const user = pgTable("user", {
@@ -16,7 +16,7 @@ export const user = pgTable("user", {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull(),
   image: text('image'),
-  postId: text('post_id').notNull().array().default([]),
+  postIds: text('post_ids').notNull().array().default([]),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull()
 });
@@ -60,7 +60,8 @@ export const verification = pgTable("verification", {
 export const post = pgTable("post", {
   id: text("id").notNull().primaryKey().$defaultFn(() => createId()),
   title: text("title").notNull(),
-  content: text("content").notNull(),
+  content: jsonb("content").notNull(),
+  rawText: text("raw_text").notNull(),
   authorId: text("author_id").notNull().references(() => user.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -105,6 +106,7 @@ export const table = {
   account,
   session,
   verification,
+  post
 } as const
 
 export type Table = typeof table

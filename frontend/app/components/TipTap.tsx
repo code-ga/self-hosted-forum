@@ -7,8 +7,10 @@ import {
   type JSONContent,
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
 import { FaBold, FaItalic, FaStrikethrough } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
+import "./Tiptap.css"
 
 // define your extension array
 const extensions = [StarterKit];
@@ -25,6 +27,7 @@ interface Props {
   };
   content?: JSONContent;
   setContent?: (content: JSONContent) => void;
+  placeholder?: string;
 }
 
 const Tiptap: React.FC<Props> = ({
@@ -35,10 +38,16 @@ const Tiptap: React.FC<Props> = ({
   bubbleMenu,
   content,
   setContent,
+  placeholder,
 }) => {
   const editor = useEditor({
-    extensions,
-    content: content || [],
+    extensions: [
+      ...extensions,
+      Placeholder.configure({
+        placeholder,
+      }),
+    ],
+    content,
     onUpdate: ({ editor }) => {
       if (setContent) {
         setContent(editor.getJSON());
@@ -50,10 +59,10 @@ const Tiptap: React.FC<Props> = ({
     <>
       <EditorContent
         editor={editor}
-        className={twMerge("bg-white text-black hover:border-none", className)}
+        className={twMerge("bg-white text-black hover:border-none [&>div:first-child]:min-h-14 [&>div:first-child>div:first-child]:min-h-14", className)}
         id={id}
         rows={rows}
-        step={4}
+        placeholder={placeholder}
       />
       {floatingMenu && (
         <FloatingMenu

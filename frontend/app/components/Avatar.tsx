@@ -1,7 +1,17 @@
+import { useQuery } from "@tanstack/react-query";
 import { authClient } from "../libs/auth-client";
 
 const Avatar: React.FC = () => {
-  const { data, error, isPending } = authClient.useSession();
+  const { data, error, isPending } = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const result = await authClient.getSession();
+      if (result?.error) {
+        throw result.error;
+      }
+      return result.data;
+    },
+  });
 
   if (isPending) {
     return <div>Loading...</div>;
