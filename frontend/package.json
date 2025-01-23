@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "react-router build && bun run vercel/prepare.ts",
+    "build": "react-router build&& bun run vercel/prepare.ts",
     "dev": "cross-env NODE_ENV=development bun run ./dev-server.ts",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc"
