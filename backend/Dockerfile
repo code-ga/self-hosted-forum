@@ -34,6 +34,6 @@ COPY --from=prerelease /usr/src/app/ .
 RUN chmod +x ./run.sh
 
 # run the app
-USER bun
+# USER bun
 EXPOSE 3000/tcp
 ENTRYPOINT ["sh","./run.sh"]
