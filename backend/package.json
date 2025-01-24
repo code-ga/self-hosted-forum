@@ -14,11 +14,11 @@
     "drizzle-orm": "^0.38.4",
     "drizzle-typebox": "^0.2.1",
     "elysia": "^1.2.0",
-    "pg": "^8.13.1",
-    "drizzle-kit": "^0.30.2"
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@better-auth/cli": "^1.1.14",
+    "drizzle-kit": "^0.30.2",
     "@types/pg": "^8.11.10",
     "bun-types": "latest"
   },
