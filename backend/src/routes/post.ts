@@ -3,7 +3,7 @@ import { userMiddleware } from "../middlewares/auth-middleware"
 import { db } from "../database"
 import { post as postSchema } from "../database/schema"
 import { baseResponseType, contentType as contentType, postType } from "../types"
-import { eq } from "drizzle-orm"
+import { eq, desc } from "drizzle-orm"
 import { parseJsonContentToString } from "../utils"
 
 
@@ -11,7 +11,7 @@ import { parseJsonContentToString } from "../utils"
 const postRouter = new Elysia({ prefix: "/posts" })
   .get("/posts", async (ctx) => {
     const { page, limit } = ctx.query
-    const posts = await db.select().from(postSchema).limit(limit).offset((page - 1) * limit)
+    const posts = await db.select().from(postSchema).limit(limit).offset((page - 1) * limit).orderBy(desc(postSchema.createdAt))
     return {
       status: 200,
       message: "Posts fetched successfully",
@@ -60,6 +60,9 @@ const postRouter = new Elysia({ prefix: "/posts" })
         .resolve(userMiddleware)
         .post("/createPost", async (ctx) => {
           const { title, content } = ctx.body
+          if (!parseJsonContentToString(content).length || !title.length) {
+            return ctx.error(400, { status: 400, type: "error", success: false, message: "Title and content are required" });
+          }
           const post = await db.insert(postSchema).values({ title, content, rawText: parseJsonContentToString(content), authorId: ctx.user?.id || "" }).returning()
           if (!post.length) {
             return ctx.error(500, { status: 500, type: "error", success: false, message: "Post creation failed" });
@@ -78,7 +81,8 @@ const postRouter = new Elysia({ prefix: "/posts" })
           }),
           response: {
             200: baseResponseType(postType),
-            500: baseResponseType(t.Null())
+            500: baseResponseType(t.Null()),
+            400: baseResponseType(t.Null())
           }
         }).put("/:id", async (ctx) => {
           const { id } = ctx.params

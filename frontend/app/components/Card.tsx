@@ -1,12 +1,18 @@
 import { twMerge } from "tailwind-merge";
-import type { BaseResponse, Post, User } from "@/types";
+import type { BaseResponse, Post, User, Comment } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { client } from "../libs/client";
 import { authClient } from "../libs/auth-client";
-import { DeleteConfirmationModal } from "./Modal";
+import {
+  DeleteCommentConfirmationModal,
+  DeletePostConfirmationModal,
+} from "./Modal";
 import { useState } from "react";
 import { Link } from "react-router";
 import EditPostForm from "./EditPostForm";
+import { renderContent } from "../utils";
+import type { JSONContent } from "@tiptap/react";
+import { EditCommentForm } from "./CommentForm";
 
 export default function Card({
   children,
@@ -16,7 +22,7 @@ export default function Card({
   className?: string;
 }) {
   return (
-    <div className="flex justify-center items-center my-8">
+    <div className="flex justify-center items-center">
       <div
         className={twMerge(
           "w-full bg-base-100 shadow-xl border lg:w-1/2 drop-shadow-lg rounded shadow-slate-700 bg-gray-800",
@@ -149,7 +155,7 @@ export function PostCard({ post }: { post: Post }) {
           </div>
         </div>
       )}
-      <Card className="mb-4 text-left hover:scale-105 transition">
+      <Card className="text-left hover:scale-105 transition mb-10">
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <Link to={`/post/${post.id}`}>
             <h2 className="text-white text-lg font-bold mb-2">{post.title}</h2>
@@ -174,13 +180,13 @@ export function PostCard({ post }: { post: Post }) {
                 <EditPostForm post={post}></EditPostForm>
               )}
               {currentUser?.user.id === author.id && (
-                <DeleteConfirmationModal
+                <DeletePostConfirmationModal
                   onDelete={async (event, setIsOpen) => {
                     event.preventDefault();
                     setIsOpen(false);
                     await deleteMutation.mutateAsync(post.id);
                   }}
-                ></DeleteConfirmationModal>
+                ></DeletePostConfirmationModal>
               )}
             </div>
           </div>
@@ -189,3 +195,150 @@ export function PostCard({ post }: { post: Post }) {
     </>
   );
 }
+
+export const CommentCard = ({ comment }: { comment: Comment }) => {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const {
+    data: userData,
+    error: userError,
+    isPending: userIsPending,
+  } = useQuery({
+    queryKey: ["user", comment.authorId],
+    queryFn: async () => {
+      const { data, status, error } = await client.api
+        .user({ id: comment.authorId })
+        .get({
+          query: { id: comment.authorId },
+        });
+      if (error) {
+        throw error;
+      }
+      if (status !== 200) {
+        throw new Error("Failed to fetch user");
+      }
+      return data as BaseResponse<{ user: User }>;
+    },
+  });
+  const { data: currentUser } = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const result = await authClient.getSession();
+      if (result?.error) {
+        throw result.error;
+      }
+      return result.data;
+    },
+  });
+  if (!userData) {
+    return null;
+  }
+  if (userError || error) {
+    return (
+      <Card className="text-center my-10">
+        <p className="text-red-500 text-2xl">{userError?.message || error}</p>
+      </Card>
+    );
+  }
+  if (userIsPending) {
+    return (
+      <Card className="text-center my-10">
+        <p className="text-2xl">Loading...</p>
+      </Card>
+    );
+  }
+  const user = userData.data.user;
+  const deleteComment = async () => {
+    const { data, error, status } = await client.api
+      .comments({ id: comment.id })
+      .delete();
+    if (error) {
+      setError(error.message);
+    }
+    if (status !== 200) {
+      setError("Failed to delete comment");
+    }
+    const res = data as BaseResponse<Comment>;
+    queryClient.setQueryData(
+      ["comments", comment.postId],
+      (oldData: Comment[]) => {
+        return oldData.filter((c) => c.id !== res.data.id);
+      }
+    );
+  };
+
+  const onEditCommentSubmit = async (content: JSONContent, clearInput: () => void) => {
+    const { data, error, status } = await client.api
+      .comments({ id: comment.id })
+      .put({ content: content });
+    if (error) {
+      setError(error.message);
+    }
+    if (status !== 200) {
+      setError("Failed to update comment");
+    }
+    const res = data as BaseResponse<Comment>;
+    queryClient.setQueryData(["comments", comment.postId], (oldData: Comment[]) => {
+      return oldData.map((c) => (c.id === comment.id ? res.data : c));
+    });
+    queryClient.setQueryData(["comment", comment.id], res.data);
+    clearInput();
+    setEditing(false);
+  };
+  return (
+    <Card className="text-left transition mb-5 mt-10">
+      <div className="bg-gray-800 p-4 rounded-lg shadow-md">
+        <Link to={`/profile/${user.id}`}>
+          <div className="flex items-center my-3">
+            <img
+              className="h-8 w-8 rounded-full mr-3"
+              src={
+                user.image ||
+                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSTtKDBHoGq6L5htfFMFrluklPkLsQd4e3PAg&s"
+              }
+              alt={user.name}
+            />
+            <span className="text-gray-400 font-bold"> {user.name}</span>
+            <span className="text-gray-400 ml-2">
+              {" "}
+              - {new Date(comment.createdAt).toLocaleString()}
+            </span>
+          </div>
+        </Link>
+        {editing ? (
+          <EditCommentForm
+            comment={comment}
+            onSubmit={onEditCommentSubmit}
+          ></EditCommentForm>
+        ) : (
+          <h2 className="text-white text-lg mb-2">
+            {renderContent(comment.content as JSONContent)}
+          </h2>
+        )}
+
+        <div className="flex justify-end items-center">
+          {currentUser?.user.id === user.id && (
+            <button
+              onClick={() => {
+                setEditing((old) => !old);
+              }}
+              className="text-gray-400 mr-2"
+            >
+              Edit
+            </button>
+          )}
+          {currentUser?.user.id === user.id && (
+            <DeleteCommentConfirmationModal
+              onDelete={async (event, setIsOpen) => {
+                event.preventDefault();
+                setIsOpen(false);
+                await deleteComment();
+              }}
+            ></DeleteCommentConfirmationModal>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+};

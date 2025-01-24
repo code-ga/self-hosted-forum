@@ -219,7 +219,7 @@ function EditPostForm({ post }: { post: Post }) {
                             </p>
                           )}
                           <Tiptap
-                            className="mt-3 bg-white/5 text-white rounded-lg w-full py-1.5 px-3 [&>div:first-child]:w-[50vw] [&>div:first-child>div:first-child]:w-[50vw]"
+                            className="mt-3 bg-white/5 text-white rounded-lg w-full py-1.5 px-3 [&>div:first-child]:w-[50vw] [&>div:first-child>div:first-child]:w-[50vw] [&>div:first-child]:min-h-14 [&>div:first-child>div:first-child]:min-h-14"
                             bubbleMenu={{}}
                             placeholder="Write your problem, solution, feelings, confession, etc."
                             content={formData.content}

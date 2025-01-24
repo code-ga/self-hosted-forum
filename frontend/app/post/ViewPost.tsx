@@ -1,14 +1,17 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import type { BaseResponse, Comment, Post, User } from "@/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { JSONContent } from "@tiptap/react";
 import { useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
-import type { Post, BaseResponse, User } from "@/types";
-import Card, { PostCard } from "../components/Card";
-import { DeleteConfirmationModal } from "../components/Modal";
-import { authClient } from "../libs/auth-client";
-import { client } from "../libs/client";
+import { Link, Navigate, useParams } from "react-router";
+import Card, { CommentCard } from "../components/Card";
+import CommentForm from "../components/CommentForm";
 import EditPostForm from "../components/EditPostForm";
 import ErrorPage from "../components/ErrorPage";
 import LoadingPage from "../components/LoadingPage";
+import { DeletePostConfirmationModal } from "../components/Modal";
+import { authClient } from "../libs/auth-client";
+import { client } from "../libs/client";
+import { renderContent } from "../utils";
 
 const ViewPost: React.FC<{ post: Post }> = ({ post }) => {
   const [toastError, setToastError] = useState<string | null>(null);
@@ -131,13 +134,18 @@ const ViewPost: React.FC<{ post: Post }> = ({ post }) => {
           </div>
         </div>
       )}
-      <Card className="mb-4 text-left transition">
+      <Card className="mb-4 text-left transition my-8">
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
           <h2 className="text-white text-lg font-bold mb-2">{post.title}</h2>
-          <p className="text-gray-400 mb-4 break-words">{post.rawText}</p>
+          <h2 className="text-white text-lg mb-2">
+            {renderContent(post.content as JSONContent)}
+          </h2>
           <div className="flex justify-between items-center">
             <div>
-              <span className="text-gray-400">By {author.name}</span>
+              <Link to={`/profile/${author.id}`}>
+                <span className="text-gray-400">By</span>
+                <span className="text-gray-400 font-bold"> {author.name}</span>
+              </Link>
               <span className="text-gray-400 ml-2">
                 {" "}
                 - {new Date(post.createdAt).toLocaleString()}
@@ -148,13 +156,13 @@ const ViewPost: React.FC<{ post: Post }> = ({ post }) => {
                 <EditPostForm post={post}></EditPostForm>
               )}
               {currentUser?.user.id === author.id && (
-                <DeleteConfirmationModal
+                <DeletePostConfirmationModal
                   onDelete={async (event, setIsOpen) => {
                     event.preventDefault();
                     setIsOpen(false);
                     await deleteMutation.mutateAsync(post.id);
                   }}
-                ></DeleteConfirmationModal>
+                ></DeletePostConfirmationModal>
               )}
             </div>
           </div>
@@ -169,6 +177,7 @@ const ViewPostPage = () => {
   if (!id) {
     return <Navigate to="/" />;
   }
+  const queryClient = useQueryClient();
   const {
     data: post,
     error: postError,
@@ -187,6 +196,26 @@ const ViewPostPage = () => {
       return result.data.post;
     },
   });
+  const {
+    data: comment,
+    error: commentError,
+    isPending: commentIsPending,
+  } = useQuery({
+    queryKey: ["comments", id],
+    queryFn: async () => {
+      const { data, status, error } = await client.api.comments
+        .posts({ postId: id })
+        .get();
+      if (error) {
+        throw error;
+      }
+      if (status !== 200) {
+        throw new Error("Failed to fetch post");
+      }
+      const result = data as BaseResponse<{ comments: Comment[] }>;
+      return result.data.comments;
+    },
+  });
   if (postIsPending) {
     return <LoadingPage></LoadingPage>;
   }
@@ -194,7 +223,62 @@ const ViewPostPage = () => {
     return <ErrorPage error={postError.message}></ErrorPage>;
   }
 
-  return <ViewPost post={post} />;
+  const handleCommentSubmit = async (
+    comment: JSONContent,
+    clearInput: () => void
+  ) => {
+    const { data, error, status } =
+      await client.api.comments.createComment.post(
+        {
+          content: comment,
+          postId: post.id,
+        },
+        {}
+      );
+    if (error) {
+      throw error;
+    }
+    if (status !== 200) {
+      throw new Error("Failed to create comment");
+    }
+    const result = data as BaseResponse<Comment>;
+    console.log(result);
+    clearInput();
+    queryClient.setQueryData(["comments", id], (oldData: Comment[]) => {
+      if (!oldData) {
+        return oldData;
+      }
+      return [...oldData, result.data]
+        .filter((c) => c.id !== "")
+        .sort(
+          (a, b) =>
+            new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+        );
+    });
+  };
+
+  console.log(comment);
+
+  return (
+    <div className="flex flex-col">
+      <ViewPost post={post} />
+      <Card className="mb-4 border-gray-500">
+        <div className="h-1 bg-gray-500"></div>
+      </Card>
+      {commentIsPending && <LoadingPage></LoadingPage>}
+      {commentError && (
+        <Card className="text-center border-none bg-transparent my-10 shadow-none">
+          <p className="text-red-500 text-2xl">{commentError.message}</p>
+        </Card>
+      )}
+      {comment?.map((comment) => (
+        <CommentCard comment={comment} key={comment.id}></CommentCard>
+      ))}
+      <Card className="mt-4 border-gray-800">
+        <CommentForm onSubmit={handleCommentSubmit}></CommentForm>
+      </Card>
+    </div>
+  );
 };
 
 export default ViewPostPage;

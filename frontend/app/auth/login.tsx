@@ -111,6 +111,14 @@ const LoginPage: React.FC = () => {
               <button
                 type="submit"
                 className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                onClick={async () => {
+                  await authClient.signIn.social({
+                    provider: "discord",
+                    callbackURL: import.meta.env.DEV
+                      ? "http://localhost:5173/"
+                      : "https://self-hosted-forum.vercel.app/",
+                  });
+                }}
               >
                 Login with Discord
               </button>

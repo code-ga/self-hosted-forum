@@ -5,9 +5,10 @@ import { table } from "../database/schema";
 import { db } from "../database";
 import { eq } from "drizzle-orm";
 import { userMiddleware } from "../middlewares/auth-middleware";
+import { parseJsonContentToString } from "../utils";
 
-export const commentRouter = new Elysia({ prefix: "/comment" })
-  .get("/:postId", async (ctx) => {
+export const commentRouter = new Elysia({ prefix: "/comments" })
+  .get("/posts/:postId", async (ctx) => {
     const { postId } = ctx.params;
     const comments = await db.select().from(table.comment).where(eq(table.comment.postId, postId));
     return {
@@ -20,9 +21,6 @@ export const commentRouter = new Elysia({ prefix: "/comment" })
       }
     }
   }, {
-    params: t.Object({
-      postId: t.String()
-    }),
     response: {
       200: baseResponseType(t.Object({ comments: t.Array(commentType) })),
       404: baseResponseType(t.Null()),
@@ -35,7 +33,17 @@ export const commentRouter = new Elysia({ prefix: "/comment" })
         .resolve(userMiddleware)
         .post("/createComment", async ctx => {
           const { content, postId, parent_comment_id } = ctx.body
-          const comment = await db.insert(table.comment).values({ content, authorId: ctx.user?.id || "", postId, parentCommentId: parent_comment_id }).returning()
+          if (!postId) {
+            return ctx.error(400, { status: 400, type: "error", success: false, message: "Post ID is required" });
+          }
+          if (!parseJsonContentToString(content).length) {
+            return ctx.error(400, { status: 400, type: "error", success: false, message: "Content is required" });
+          }
+          const post = await db.select().from(table.post).where(eq(table.post.id, postId)).limit(1)
+          if (!post.length) {
+            return ctx.error(404, { status: 404, type: "error", success: false, message: "Post not found" });
+          }
+          const comment = await db.insert(table.comment).values({ content, authorId: ctx.user?.id || "", postId: post[0].id, parentCommentId: parent_comment_id }).returning()
           if (!comment.length) {
             return ctx.error(500, { status: 500, type: "error", success: false, message: "Comment creation failed" });
           }
@@ -54,7 +62,9 @@ export const commentRouter = new Elysia({ prefix: "/comment" })
           }),
           response: {
             200: baseResponseType(commentType),
-            500: baseResponseType(t.Null())
+            500: baseResponseType(t.Null()),
+            400: baseResponseType(t.Null()),
+            404: baseResponseType(t.Null())
           }
         })
         .put("/:id", async (ctx) => {

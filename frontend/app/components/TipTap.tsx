@@ -11,7 +11,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { FaBold, FaItalic, FaStrikethrough } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
-import "./Tiptap.css"
+import "./Tiptap.css";
 
 // define your extension array
 const extensions = [StarterKit];
@@ -55,12 +55,15 @@ const Tiptap: React.FC<Props> = ({
       }
     },
   });
-
+  // if (editor && !content) {
+  //   editor.commands.clearContent(false);
+  // }
+  console.log("rendering tiptap");
   return (
     <>
       <EditorContent
         editor={editor}
-        className={twMerge("bg-white text-black hover:border-none [&>div:first-child]:min-h-14 [&>div:first-child>div:first-child]:min-h-14", className)}
+        className={twMerge("bg-white text-black hover:border-none", className)}
         id={id}
         rows={rows}
         placeholder={placeholder}
