@@ -6,7 +6,11 @@ import LoadingPage from "../components/LoadingPage";
 import type { BaseResponse, Post } from "@/types";
 
 export function Welcome() {
-  const { data:posts, error, isPending } = useQuery({
+  const {
+    data: posts,
+    error,
+    isPending,
+  } = useQuery({
     queryKey: ["posts"],
     queryFn: async () => {
       const { data, status, error } = await client.api.posts.posts.get({
@@ -30,7 +34,7 @@ export function Welcome() {
   ) : error ? (
     <ErrorPage error={error.message}></ErrorPage>
   ) : (
-    <main className="p-16 text-center w-full mx-auto">
+    <main className="px-16 py-10 text-center w-full mx-auto">
       {posts.map((post) => {
         return <PostCard key={post.id} post={post}></PostCard>;
       })}

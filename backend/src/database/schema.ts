@@ -67,6 +67,17 @@ export const post = pgTable("post", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+
+export const comment = pgTable("comment", {
+  id: text("id").notNull().primaryKey().$defaultFn(() => createId()),
+  content: jsonb("content").notNull(),
+  authorId: text("author_id").notNull().references(() => user.id),
+  postId: text("post_id").notNull().references(() => post.id),
+  parentCommentId: text("parent_comment_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
 export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   sessions: many(session),
@@ -101,12 +112,28 @@ export const postRelations = relations(post, ({ one }) => ({
   }),
 }));
 
+export const commentRelations = relations(comment, ({ one }) => ({
+  author: one(user, {
+    fields: [comment.authorId],
+    references: [user.id],
+  }),
+  post: one(post, {
+    fields: [comment.postId],
+    references: [post.id],
+  }),
+  parentComment: one(comment, {
+    fields: [comment.parentCommentId],
+    references: [comment.id],
+  }),
+}))
+
 export const table = {
   user,
   account,
   session,
   verification,
-  post
+  post,
+  comment
 } as const
 
 export type Table = typeof table

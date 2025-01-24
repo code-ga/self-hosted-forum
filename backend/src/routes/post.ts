@@ -2,7 +2,7 @@ import { Elysia, Static, t } from "elysia"
 import { userMiddleware } from "../middlewares/auth-middleware"
 import { db } from "../database"
 import { post as postSchema } from "../database/schema"
-import { baseResponseType, postType } from "../types"
+import { baseResponseType, contentType as contentType, postType } from "../types"
 import { eq } from "drizzle-orm"
 import { parseJsonContentToString } from "../utils"
 
@@ -28,6 +28,31 @@ const postRouter = new Elysia({ prefix: "/posts" })
     }),
     response: baseResponseType(t.Object({ posts: t.Array(postType) }))
   })
+  .get("/:id", async (ctx) => {
+    const { id } = ctx.params
+    const post = await db.select().from(postSchema).where(eq(postSchema.id, id)).limit(1)
+    if (!post.length) {
+      return ctx.error(404, { status: 404, type: "error", success: false, message: "Post not found" });
+    }
+    ctx.response = {
+      status: 200,
+      message: "Post fetched successfully",
+      success: true,
+      type: "success",
+      data: {
+        post: post[0] as Static<typeof postType>
+      }
+    }
+    return ctx.response
+  }, {
+    params: t.Object({
+      id: t.String()
+    }),
+    response: {
+      200: baseResponseType(t.Object({ post: postType })),
+      404: baseResponseType(t.Null())
+    }
+  })
   .guard({
   },
     app =>
@@ -49,9 +74,12 @@ const postRouter = new Elysia({ prefix: "/posts" })
         }, {
           body: t.Object({
             title: t.String(),
-            content: t.Record(t.String(), t.Any()),
+            content: contentType,
           }),
-          response: { 200: baseResponseType(postType), 500: baseResponseType(postType) }
+          response: {
+            200: baseResponseType(postType),
+            500: baseResponseType(t.Null())
+          }
         }).put("/:id", async (ctx) => {
           const { id } = ctx.params
           const post = await db.select().from(postSchema).where(eq(postSchema.id, id)).limit(1)
@@ -61,8 +89,9 @@ const postRouter = new Elysia({ prefix: "/posts" })
           if (post[0].authorId !== ctx.user?.id) {
             return ctx.error(403, { status: 403, type: "error", success: false, message: "You are not authorized to update this post" });
           }
-          const { title, content, rawText } = ctx.body
-          const updatedPost = await db.update(postSchema).set({ title, content, rawText: rawText }).where(eq(postSchema.id, id)).returning()
+          const title = ctx.body.title || post[0].title;
+          const content = ctx.body.content || (post[0].content as Record<string, any>);
+          const updatedPost = await db.update(postSchema).set({ title, content, rawText: parseJsonContentToString(content) }).where(eq(postSchema.id, id)).returning()
           if (!updatedPost) {
             return ctx.error(500, { status: 500, type: "error", success: false, message: "Post creation failed" });
           }
@@ -78,15 +107,14 @@ const postRouter = new Elysia({ prefix: "/posts" })
             id: t.String()
           }),
           body: t.Object({
-            title: t.String(),
-            content: t.Record(t.String(), t.Any()),
-            rawText: t.String()
+            title: t.Optional(t.String()),
+            content: contentType,
           }),
           response: {
             200: baseResponseType(postType),
-            500: baseResponseType(postType),
-            404: baseResponseType(postType),
-            403: baseResponseType(postType)
+            500: baseResponseType(t.Null()),
+            404: baseResponseType(t.Null()),
+            403: baseResponseType(t.Null())
           }
         })
         .delete("/:id", async (ctx) => {
@@ -115,9 +143,9 @@ const postRouter = new Elysia({ prefix: "/posts" })
           }),
           response: {
             200: baseResponseType(postType),
-            500: baseResponseType(postType),
-            404: baseResponseType(postType),
-            403: baseResponseType(postType)
+            500: baseResponseType(t.Null()),
+            404: baseResponseType(t.Null()),
+            403: baseResponseType(t.Null())
           }
         })
 

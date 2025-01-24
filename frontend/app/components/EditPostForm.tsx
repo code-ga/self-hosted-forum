@@ -21,14 +21,16 @@ import { clsx } from "clsx";
 import type { JSONContent } from "@tiptap/react";
 import { client } from "../libs/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { BaseResponse, Post } from "@/types";
 
-function CreatePostForm() {
+function EditPostForm({ post }: { post: Post }) {
   let [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<{
     title: string;
     content?: JSONContent;
   }>({
-    title: "",
+    title: post.title,
+    content: post.content as JSONContent,
   });
   const [isCreating, setIsCreating] = useState(false);
   const [formError, setFormError] = useState<Record<string, string>>({});
@@ -80,7 +82,7 @@ function CreatePostForm() {
         data: result,
         error,
         status,
-      } = await client.api.posts.createPost.post({
+      } = await client.api.posts({ id: post.id }).put({
         title: formData.title,
         content: formData.content,
       });
@@ -103,14 +105,27 @@ function CreatePostForm() {
       }
 
       if (status === 200) {
-        console.log(result);
-        queryClient.invalidateQueries({ queryKey: ["posts"] });
+        const res = result as BaseResponse<Post>;
+        if (res.success) {
+          queryClient.setQueryData(["post", post.id], res.data);
+          queryClient.setQueryData(["posts"], (old: Post[] | undefined) => {
+            if (!old) {
+              return old;
+            }
+            return old.map((post) => {
+              if (post.id === res.data.id) {
+                return res.data;
+              }
+              return post;
+            });
+          });
+          setFormData({
+            title: res.data.title,
+            content: res.data.content as JSONContent,
+          });
+        }
         setIsCreating(false);
         setIsOpen(false);
-        setFormData({
-          title: "",
-          content: undefined,
-        });
       }
     } catch (error) {
       setIsCreating(false);
@@ -127,9 +142,9 @@ function CreatePostForm() {
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 rounded-md bg-gray-700 py-1.5 px-3 text-sm/6 font-semibold text-white shadow-inner shadow-white/10 focus:outline-none data-[hover]:bg-gray-600 data-[open]:bg-gray-700 data-[focus]:outline-1 data-[focus]:outline-white"
+        className="text-blue-500 hover:underline mr-2"
       >
-        <CiCirclePlus className="text-2xl" />
+        Edit
       </Button>
       <Dialog
         open={isOpen}
@@ -148,11 +163,13 @@ function CreatePostForm() {
                 ) : (
                   <>
                     <DialogTitle className="font-bold text-2xl">
-                      Create a Post
+                      Edit Post
                     </DialogTitle>
                     <Description className="text-sm/1 text-gray-400">
                       this will create new post as{" "}
-                      <span className="font-bold text-white">{data?.user?.name}</span>
+                      <span className="font-bold text-white">
+                        {data?.user?.name}
+                      </span>
                     </Description>
                     {formError.fetch && (
                       <p className="text-sm/1 text-red-500 font-bold">
@@ -229,7 +246,7 @@ function CreatePostForm() {
                         className="inline-flex items-center gap-2 rounded-md bg-blue-700 py-1.5 px-3 text-sm/6 font-semibold text-white shadow-inner shadow-white/10 focus:outline-none data-[hover]:bg-blue-600 data-[open]:bg-blue-700 data-[focus]:outline-1 data-[focus]:outline-white"
                         disabled={isCreating}
                       >
-                        Create
+                        Edit
                       </Button>
                     </div>
                   </>
@@ -243,4 +260,4 @@ function CreatePostForm() {
   );
 }
 
-export default CreatePostForm;
+export default EditPostForm;

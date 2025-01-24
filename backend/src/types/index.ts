@@ -16,6 +16,14 @@ export type BaseResponse<T> = {
   data: T
 }
 
+export const contentType = t.Recursive(Self => t.Object({
+  type: t.Optional(t.String()),
+  content: t.Optional(t.Array(Self)),
+  attrs: t.Optional(t.Record(t.String(), t.Any())),
+  marks: t.Optional(t.Array(t.Record(t.String(), t.Any()))),
+  text: t.Optional(t.String())
+}))
+
 export const postType = createSelectSchema(table.post)
 
 export type Post = Static<typeof postType>
@@ -23,3 +31,7 @@ export type Post = Static<typeof postType>
 export const userType = createSelectSchema(table.user)
 
 export type User = Static<typeof userType>
+
+export const commentType = createSelectSchema(table.comment)
+
+export type Comment = Static<typeof commentType>

@@ -1,36 +1,18 @@
-import { twMerge } from "tailwind-merge";
-import type { BaseResponse, Post, User } from "@/types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { client } from "../libs/client";
-import { authClient } from "../libs/auth-client";
-import { DeleteConfirmationModal } from "./Modal";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link } from "react-router";
-import EditPostForm from "./EditPostForm";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
+import type { Post, BaseResponse, User } from "@/types";
+import Card, { PostCard } from "../components/Card";
+import { DeleteConfirmationModal } from "../components/Modal";
+import { authClient } from "../libs/auth-client";
+import { client } from "../libs/client";
+import EditPostForm from "../components/EditPostForm";
+import ErrorPage from "../components/ErrorPage";
+import LoadingPage from "../components/LoadingPage";
 
-export default function Card({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className="flex justify-center items-center my-8">
-      <div
-        className={twMerge(
-          "w-full bg-base-100 shadow-xl border lg:w-1/2 drop-shadow-lg rounded shadow-slate-700 bg-gray-800",
-          className
-        )}
-      >
-        <div className="">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-export function PostCard({ post }: { post: Post }) {
+const ViewPost: React.FC<{ post: Post }> = ({ post }) => {
   const [toastError, setToastError] = useState<string | null>(null);
+
   const {
     data: user,
     error,
@@ -149,26 +131,18 @@ export function PostCard({ post }: { post: Post }) {
           </div>
         </div>
       )}
-      <Card className="mb-4 text-left hover:scale-105 transition">
+      <Card className="mb-4 text-left transition">
         <div className="bg-gray-800 p-4 rounded-lg shadow-md">
-          <Link to={`/post/${post.id}`}>
-            <h2 className="text-white text-lg font-bold mb-2">{post.title}</h2>
-            <p className="text-gray-400 mb-4 break-words">
-              {post.rawText.slice(0, 100)}
-              {post.rawText.length > 100 && "..."}
-            </p>
-          </Link>
+          <h2 className="text-white text-lg font-bold mb-2">{post.title}</h2>
+          <p className="text-gray-400 mb-4 break-words">{post.rawText}</p>
           <div className="flex justify-between items-center">
-            <Link to={`/profile/${author.id}`}>
-              <div>
-                <span className="text-gray-400">By</span>
-                <span className="text-gray-400 font-bold"> {author.name}</span>
-                <span className="text-gray-400 ml-2">
-                  {" "}
-                  - {new Date(post.createdAt).toLocaleString()}
-                </span>
-              </div>
-            </Link>
+            <div>
+              <span className="text-gray-400">By {author.name}</span>
+              <span className="text-gray-400 ml-2">
+                {" "}
+                - {new Date(post.createdAt).toLocaleString()}
+              </span>
+            </div>
             <div>
               {currentUser?.user.id === author.id && (
                 <EditPostForm post={post}></EditPostForm>
@@ -188,4 +162,39 @@ export function PostCard({ post }: { post: Post }) {
       </Card>
     </>
   );
-}
+};
+
+const ViewPostPage = () => {
+  const { id } = useParams<{ id: string }>();
+  if (!id) {
+    return <Navigate to="/" />;
+  }
+  const {
+    data: post,
+    error: postError,
+    isPending: postIsPending,
+  } = useQuery({
+    queryKey: ["post", id],
+    queryFn: async () => {
+      const { data, status, error } = await client.api.posts({ id }).get();
+      if (error) {
+        throw error;
+      }
+      if (status !== 200) {
+        throw new Error("Failed to fetch post");
+      }
+      const result = data as BaseResponse<{ post: Post }>;
+      return result.data.post;
+    },
+  });
+  if (postIsPending) {
+    return <LoadingPage></LoadingPage>;
+  }
+  if (postError) {
+    return <ErrorPage error={postError.message}></ErrorPage>;
+  }
+
+  return <ViewPost post={post} />;
+};
+
+export default ViewPostPage;

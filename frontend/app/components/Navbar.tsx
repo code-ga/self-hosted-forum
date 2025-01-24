@@ -21,7 +21,10 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   return (
     <nav className="bg-gray-800 text-white p-4 flex justify-between content-center">
-      <h1 className="text-2xl font-bold">Clone Forum</h1>
+      <Link to={"/"}>
+        <h1 className="text-2xl font-bold">Clone Forum</h1>
+      </Link>
+
       <div>
         {data?.user ? (
           <div className="flex items-center gap-4 mx-10">
