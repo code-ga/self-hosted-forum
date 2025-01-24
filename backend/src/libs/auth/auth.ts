@@ -38,9 +38,14 @@ export const auth = betterAuth({
   },
   trustedOrigins: ["http://localhost:3000/api/auth", "http://localhost:3000", "http://localhost:5173", "http://localhost:5173/auth/callback", "https://self-hosted-forum.vercel.app", "https://self-hosted-forum.vercel.app/", "https://self-hosted-forum.vercel.app/auth/callback"],
   advanced: {
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: "self-hosted-forum.vercel.app"
+    cookies: {
+      session_token: {
+        attributes: {
+          // Set custom cookie attributes
+          sameSite: "None",
+          // secure: true,
+        }
+      },
     }
   }
 });
