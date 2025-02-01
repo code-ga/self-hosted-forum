@@ -26,7 +26,16 @@ const postRouter = new Elysia({ prefix: "/posts" })
       page: t.Number({ default: 1 }),
       limit: t.Number({ default: 10 })
     }),
-    response: baseResponseType(t.Object({ posts: t.Array(postType) }))
+    response: baseResponseType(t.Object({ posts: t.Array(postType) })),
+    detail: {
+      description: "Get all posts",
+      responses: {
+        200: {
+          description: "Posts fetched successfully with pagination and no relationship added",
+        },
+      },
+      tags: ["post"]
+    }
   })
   .get("/:id", async (ctx) => {
     const { id } = ctx.params
@@ -51,6 +60,18 @@ const postRouter = new Elysia({ prefix: "/posts" })
     response: {
       200: baseResponseType(t.Object({ post: postType })),
       404: baseResponseType(t.Null())
+    },
+    detail: {
+      description: "Get a post by id",
+      responses: {
+        200: {
+          description: "Post fetched successfully with no relationship added",
+        },
+        404: {
+          description: "Post not found",
+        },
+      },
+      tags: ["post"]
     }
   })
   .guard({
@@ -83,6 +104,21 @@ const postRouter = new Elysia({ prefix: "/posts" })
             200: baseResponseType(postType),
             500: baseResponseType(t.Null()),
             400: baseResponseType(t.Null())
+          },
+          detail: {
+            description: "Create a post",
+            responses: {
+              200: {
+                description: "Post created successfully",
+              },
+              500: {
+                description: "Post creation failed",
+              },
+              400: {
+                description: "Title and content are required",
+              },
+            },
+            tags: ["post"]
           }
         }).put("/:id", async (ctx) => {
           const { id } = ctx.params
@@ -119,6 +155,24 @@ const postRouter = new Elysia({ prefix: "/posts" })
             500: baseResponseType(t.Null()),
             404: baseResponseType(t.Null()),
             403: baseResponseType(t.Null())
+          },
+          detail: {
+            description: "Update a post",
+            responses: {
+              200: {
+                description: "Post updated successfully",
+              },
+              500: {
+                description: "Post creation failed",
+              },
+              404: {
+                description: "Post not found",
+              },
+              403: {
+                description: "You are not authorized to update this post",
+              },
+            },
+            tags: ["post"]
           }
         })
         .delete("/:id", async (ctx) => {
@@ -150,6 +204,24 @@ const postRouter = new Elysia({ prefix: "/posts" })
             500: baseResponseType(t.Null()),
             404: baseResponseType(t.Null()),
             403: baseResponseType(t.Null())
+          },
+          detail: {
+            description: "Delete a post",
+            responses: {
+              200: {
+                description: "Post deleted successfully",
+              },
+              500: {
+                description: "Post deletion failed",
+              },
+              404: {
+                description: "Post not found",
+              },
+              403: {
+                description: "You are not authorized to delete this post",
+              },
+            },
+            tags: ["post"]
           }
         })
 

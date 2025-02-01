@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { openAPI } from "better-auth/plugins"
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../../database";
 import { account, session, user, verification } from "../../database/schema";
@@ -15,9 +16,9 @@ export const auth = betterAuth({
       account,
     },
   }),
-  // emailAndPassword: { // we need to verify the email if use this
-  //   enabled: true // If you want to use email and password auth
-  // },
+  emailAndPassword: { // we need to verify the email if use this
+    enabled: true // If you want to use email and password auth
+  },
   socialProviders: {
     /*
     * We're using Google and Github as our social provider, 
@@ -47,5 +48,8 @@ export const auth = betterAuth({
         }
       },
     }
-  }
+  },
+  plugins: [
+    openAPI(),
+  ]
 });

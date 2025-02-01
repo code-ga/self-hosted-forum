@@ -27,5 +27,17 @@ export const userRouter = new Elysia({ prefix: "/user" })
     response: {
       200: baseResponseType(t.Object({ user: userType })),
       404: baseResponseType(t.Null()),
+    },
+    detail: {
+      description: "Get a user by id",
+      responses: {
+        200: {
+          description: "User fetched successfully with no relationship added",
+        },
+        404: {
+          description: "User not found",
+        },
+      },
+      tags: ["user"]
     }
   });

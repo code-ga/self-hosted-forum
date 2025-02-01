@@ -24,6 +24,18 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
     response: {
       200: baseResponseType(t.Object({ comments: t.Array(commentType) })),
       404: baseResponseType(t.Null()),
+    },
+    detail: {
+      description: "Get comments for a post",
+      responses: {
+        200: {
+          description: "Comments fetched successfully",
+        },
+        404: {
+          description: "Post not found",
+        },
+      },
+      tags: ["comment"]
     }
   })
   .guard(
@@ -65,6 +77,24 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
             500: baseResponseType(t.Null()),
             400: baseResponseType(t.Null()),
             404: baseResponseType(t.Null())
+          },
+          detail: {
+            description: "Create a new comment for the post",
+            responses: {
+              200: {
+                description: "Comment created successfully",
+              },
+              500: {
+                description: "Internal server error",
+              },
+              400: {
+                description: "Bad request with the reason included",
+              },
+              404: {
+                description: "Post not found or comment not found",
+              }
+            },
+            tags: ["comment"]
           }
         })
         .put("/:id", async (ctx) => {
@@ -100,6 +130,24 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
             404: baseResponseType(t.Null()),
             401: baseResponseType(t.Null()),
             500: baseResponseType(t.Null())
+          },
+          detail: {
+            description: "Update a comment",
+            responses: {
+              200: {
+                description: "Comment updated successfully",
+              },
+              404: {
+                description: "Comment not found",
+              },
+              401: {
+                description: "Unauthorized to update comment",
+              },
+              500: {
+                description: "Internal server error",
+              }
+            },
+            tags: ["comment"]
           }
         })
         .delete("/:id", async (ctx) => {
@@ -131,6 +179,24 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
             404: baseResponseType(t.Null()),
             401: baseResponseType(t.Null()),
             500: baseResponseType(t.Null())
+          },
+          detail: {
+            description: "Delete a comment",
+            responses: {
+              200: {
+                description: "Comment deleted successfully",
+              },
+              404: {
+                description: "Comment not found",
+              },
+              401: {
+                description: "Unauthorized to trigger this action",
+              },
+              500: {
+                description: "Internal server error",
+              }
+            },
+            tags: ["comment"]
           }
         })
   );
