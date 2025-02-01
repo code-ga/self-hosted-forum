@@ -39,7 +39,16 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
     }
   })
   .guard(
-    {},
+    {
+      detail: {
+        security: [
+          {
+            cookieAuth: []
+          }
+        ],
+        tags: ["comment", "api","auth"]
+      }
+    },
     app =>
       app
         .resolve(userMiddleware)

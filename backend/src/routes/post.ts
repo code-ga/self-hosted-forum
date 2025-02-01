@@ -34,7 +34,7 @@ const postRouter = new Elysia({ prefix: "/posts" })
           description: "Posts fetched successfully with pagination and no relationship added",
         },
       },
-      tags: ["post", "get", "api"]
+      tags: ["post", "get", "api"],
     }
   })
   .get("/:id", async (ctx) => {
@@ -75,6 +75,14 @@ const postRouter = new Elysia({ prefix: "/posts" })
     }
   })
   .guard({
+    detail: {
+      security: [
+        {
+          cookieAuth: []
+        }
+      ],
+      tags: ["post", "api", "auth"]
+    }
   },
     app =>
       app

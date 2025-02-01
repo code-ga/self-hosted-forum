@@ -14,7 +14,10 @@ export const app = new Elysia()
         title: "API For The Forum",
         version: "1.0.0",
         description: "API For The Forum to help you create your own forum with in a few minutes",
-      }
+      }, tags: [{
+        name: "auth",
+        description: "Authentication endpoints (using better auth for the authentication auth docs is here /api/auth/reference)",
+      }]
     }
   }))
   .use(apiRouter)
