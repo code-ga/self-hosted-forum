@@ -35,7 +35,7 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
           description: "Post not found",
         },
       },
-      tags: ["comment"]
+      tags: ["comment", "get", "api"]
     }
   })
   .guard(
@@ -94,7 +94,7 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
                 description: "Post not found or comment not found",
               }
             },
-            tags: ["comment"]
+            tags: ["comment", "api", "create"]
           }
         })
         .put("/:id", async (ctx) => {
@@ -147,7 +147,7 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
                 description: "Internal server error",
               }
             },
-            tags: ["comment"]
+            tags: ["comment", "api", "update"]
           }
         })
         .delete("/:id", async (ctx) => {
@@ -196,7 +196,7 @@ export const commentRouter = new Elysia({ prefix: "/comments" })
                 description: "Internal server error",
               }
             },
-            tags: ["comment"]
+            tags: ["comment", "api", "delete"]
           }
         })
   );

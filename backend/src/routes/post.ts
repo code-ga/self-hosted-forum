@@ -34,7 +34,7 @@ const postRouter = new Elysia({ prefix: "/posts" })
           description: "Posts fetched successfully with pagination and no relationship added",
         },
       },
-      tags: ["post"]
+      tags: ["post", "get", "api"]
     }
   })
   .get("/:id", async (ctx) => {
@@ -71,7 +71,7 @@ const postRouter = new Elysia({ prefix: "/posts" })
           description: "Post not found",
         },
       },
-      tags: ["post"]
+      tags: ["post", "get", "api"]
     }
   })
   .guard({
@@ -118,7 +118,7 @@ const postRouter = new Elysia({ prefix: "/posts" })
                 description: "Title and content are required",
               },
             },
-            tags: ["post"]
+            tags: ["post", "api", "create"]
           }
         }).put("/:id", async (ctx) => {
           const { id } = ctx.params
@@ -172,7 +172,7 @@ const postRouter = new Elysia({ prefix: "/posts" })
                 description: "You are not authorized to update this post",
               },
             },
-            tags: ["post"]
+            tags: ["post", "api", "update"]
           }
         })
         .delete("/:id", async (ctx) => {
@@ -221,7 +221,7 @@ const postRouter = new Elysia({ prefix: "/posts" })
                 description: "You are not authorized to delete this post",
               },
             },
-            tags: ["post"]
+            tags: ["post", "api", "delete"]
           }
         })
 

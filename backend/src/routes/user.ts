@@ -38,6 +38,6 @@ export const userRouter = new Elysia({ prefix: "/user" })
           description: "User not found",
         },
       },
-      tags: ["user"]
+      tags: ["user", "get", "api"]
     }
   });
